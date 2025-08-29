@@ -1,120 +1,52 @@
-# Boilerpad-GoFiber 🚀
+# 📝 TodoList API – GoFiber + MongoDB
 
-[![Go](https://img.shields.io/badge/Go-1.24-blue?logo=go&logoColor=white)](https://golang.org/)
-[![Fiber](https://img.shields.io/badge/Fiber-2.50.0-brightgreen)](https://gofiber.io/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-5.0-green?logo=mongodb&logoColor=white)](https://www.mongodb.com/)
-[![License](https://img.shields.io/badge/License-MIT-blue)](LICENSE)
-
-**Boilerplate backend menggunakan GoFiber dan MongoDB** untuk membangun REST API cepat, scalable, dan mudah dikembangkan.  
-Cocok untuk aplikasi dengan autentikasi, manajemen user, produk, event, dan modul lainnya.
+Simple REST API untuk manajemen **Todo List** menggunakan [GoFiber](https://gofiber.io/) sebagai web framework, [MongoDB](https://www.mongodb.com/) sebagai database, dan [JWT](https://jwt.io/) untuk autentikasi.
 
 ---
 
-## Fitur ✨
+## 🚀 Tech Stack
 
-- **Authentication**: Register, Login, Logout
-- **JWT Middleware**: Autentikasi token & role-based access
-- **MongoDB**: Koneksi database siap pakai
-- **Fiber Framework**: Ringan, cepat, dan mudah dikembangkan
-- **Env Config**: Semua konfigurasi rahasia ada di `.env`
-- **Extensible**: Tambah module baru (product, event, dsb) dengan mudah
-
----
-
-## Prasyarat ⚡
-
-- Go >= 1.24
-- MongoDB (Atlas atau lokal)
-- Git
-- Postman / Insomnia (opsional untuk testing API)
+- [Golang](https://go.dev/) – Backend
+- [Fiber](https://gofiber.io/) – Web Framework
+- [MongoDB](https://www.mongodb.com/) – Database
+- [JWT](https://jwt.io/) – Authentication
+- [Air](https://github.com/air-verse/air) – Live reload saat development
 
 ---
 
-## Instalasi & Setup 🛠️
+## 📂 Project Structure
 
-### 1️⃣ Clone Repository
+.
+├── config/ # Konfigurasi database
+├── controllers/ # Handler / logic untuk routes
+├── middleware/ # Middleware (JWT, role, dll)
+├── models/ # Schema data (User, Todo, dll)
+├── main.go # Entry point aplikasi
+└── go.mod # Module & dependencies
 
-````bash
-git clone https://github.com/MuliaAndiki/boilerpad-gofiber-with-monggodb.git
-cd boilerpad-gofiber-with-monggodb
+---
 
+## ⚙️ Setup
 
-## Instalasi 🛠️
+### 1️⃣ Clone repo
 
-1. Clone repository:
 ```bash
-git clone https://github.com/MuliaAndiki/boilerpad-gofiber-with-monggodb.git
-cd boilerpad-gofiber-with-monggodb
+git clone https://github.com/username/todolist-gofiber.git
+cd todolist-gofiber
 
+2️⃣ Install dependencies
 
-2️⃣ Install Dependencies
-```bash
 go mod tidy
 
-3️⃣ Buat File .env
+3️⃣ Buat file .env
 
-touch .env
-MONGO_URI=<your_mongodb_uri>
-MONGO_DB=<your_db_name>
-PORT=5000
-JWT_SECRET=<your_jwt_secret>
+4️⃣ Run app (development)
 
-4️⃣ Jalankan Server
-```bash
-go run main.go
+air
 
-server runing on port
-http://localhost:5000
-
-
-Struktur Project 📁
-boilerpad-go/
-│
-├─ config/        # Config database & env
-├─ controllers/   # Logic endpoint (Auth, User, dsb)
-├─ middleware/    # JWT & role middleware
-├─ models/        # MongoDB models
-├─ routes/        # Routing API
-├─ main.go        # Entry point aplikasi
-├─ go.mod
-├─ go.sum
-└─ .env           # Environment variable (jangan di-push ke git)
-
-
-Contoh Endpoint
-POST /api/auth/register
-Body (JSON):
-{
-  "fullname": "John Doe",
-  "email": "john@example.com",
-  "password": "password123",
-  "role": "user"
-}
-
-POST /api/auth/login
-Body (JSON):
-{
-  "email": "john@example.com",
-  "password": "password123"
-}
-Response:
-{
-  "message": "Login berhasil",
-  "token": "<JWT_TOKEN>",
-  "user": {
-    "id": "64f4a2b...xyz",
-    "fullname": "John Doe",
-    "email": "john@example.com",
-    "role": "user"
-  }
-}
-
-
-POST /api/auth/logout
-Header:
-Authorization: Bearer <JWT_TOKEN>
-Response:
-{
-  "message": "Logout berhasil, token di-blacklist"
-}
-````
+📌 API Endpoints
+🔑 Auth
+Method	Endpoint	Description
+POST	/register	Register user baru
+POST	/login	Login, dapatkan JWT
+```
