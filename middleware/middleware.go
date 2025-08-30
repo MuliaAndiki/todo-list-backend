@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"boilerpad/config"
-	"boilerpad/models"
+	"todolist/config"
+	"todolist/models"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
@@ -16,7 +16,6 @@ import (
 
 var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
 
-// VerifyToken mirip dengan verifyToken di Express
 func VerifyToken(c *fiber.Ctx) error {
 	authHeader := c.Get("Authorization")
 	if authHeader == "" {
@@ -27,7 +26,6 @@ func VerifyToken(c *fiber.Ctx) error {
 
 	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
-	// cek blacklist
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -39,7 +37,6 @@ func VerifyToken(c *fiber.Ctx) error {
 		})
 	}
 
-	// parse token
 	claims := jwt.MapClaims{}
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 		return []byte(os.Getenv("JWT_SECRET")), nil
@@ -50,12 +47,11 @@ func VerifyToken(c *fiber.Ctx) error {
 		})
 	}
 
-	// simpan user ke context
 	c.Locals("user", claims)
 
 	return c.Next()
 }
-// RequireRole mirip dengan requireRole di Express
+
 func RequireRole(roles []string) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		user, ok := c.Locals("user").(models.User)

@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"boilerpad/config"
-	"boilerpad/models"
+	"todolist/config"
+	"todolist/models"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
@@ -18,7 +18,6 @@ import (
 
 type AuthController struct{}
 
-// REGISTER
 func (AuthController) Register(c *fiber.Ctx) error {
 	var body struct {
 		Fullname string `json:"fullname"`
@@ -32,7 +31,6 @@ func (AuthController) Register(c *fiber.Ctx) error {
 		})
 	}
 
-	// cek email sudah ada
 	var existing models.User
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -44,7 +42,6 @@ func (AuthController) Register(c *fiber.Ctx) error {
 		})
 	}
 
-	// hash password
 	hash, _ := bcrypt.GenerateFromPassword([]byte(body.Password), 12)
 
 	user := models.User{
@@ -75,7 +72,6 @@ func (AuthController) Register(c *fiber.Ctx) error {
 	})
 }
 
-// LOGIN
 func (AuthController) Login(c *fiber.Ctx) error {
 	var body struct {
 		Email    string `json:"email"`
@@ -87,7 +83,6 @@ func (AuthController) Login(c *fiber.Ctx) error {
 		})
 	}
 
-	// cari user
 	var user models.User
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -99,14 +94,12 @@ func (AuthController) Login(c *fiber.Ctx) error {
 		})
 	}
 
-	// cek password
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password)); err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"message": "Password salah",
 		})
 	}
 
-	// generate JWT
 	claims := jwt.MapClaims{
 		"id":    user.ID.Hex(),
 		"email": user.Email,
@@ -143,7 +136,6 @@ func (AuthController) Logout(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// Simpan token ke blacklist
 	_, err := config.DB.Collection("blacklist_tokens").InsertOne(ctx, bson.M{
 		"token":     tokenString,
 		"createdAt": time.Now(),
