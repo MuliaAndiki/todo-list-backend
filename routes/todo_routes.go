@@ -9,9 +9,11 @@ import (
 
 func TodoRoutes(api fiber.Router) {
 	todo := api.Group("/todo")
+	todo.Use(middleware.VerifyToken)
 
-	todo.Post("/create", middleware.VerifyToken, controllers.TodosController{}.CreateTodos)
-	todo.Put("/edit/:_id", middleware.VerifyToken, controllers.TodosController{}.EditTodos)
-	todo.Delete("/delete/:_id", middleware.VerifyToken, controllers.TodosController{}.HapusTodos)
-	todo.Get("/getAll", middleware.VerifyToken, controllers.TodosController{}.GetAllTodo)
+	todo.Post("/create", controllers.TodosController{}.CreateTodos)
+	todo.Put("/edit/:_id", controllers.TodosController{}.EditTodos)
+	todo.Delete("/delete/:_id", controllers.TodosController{}.HapusTodos)
+	todo.Get("/getAll", controllers.TodosController{}.GetAllTodo)
+	todo.Get("/getByUser/:userId", controllers.TodosController{}.GetTodoByUser)
 }

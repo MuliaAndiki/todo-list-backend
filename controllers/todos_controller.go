@@ -15,8 +15,9 @@ type TodosController struct{}
 
 func (TodosController) CreateTodos(c *fiber.Ctx) error {
 	var body struct {
-		Todos  string        `json:"todos"`
-		Status models.Status `json:"status"`
+		Todos     string        `json:"todos"`
+		Status    models.Status `json:"status"`
+		CreatedAt time.Time     `json:"created_at"`
 	}
 	if err := c.BodyParser(&body); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -34,9 +35,28 @@ func (TodosController) CreateTodos(c *fiber.Ctx) error {
 		})
 	}
 
+	if body.CreatedAt.IsZero() {
+		body.CreatedAt = time.Now()
+	}
+
+	userIDStr, ok := c.Locals("userID").(string)
+	if !ok || userIDStr == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "User not authenticated",
+		})
+	}
+
+	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "Invalid user ID in token",
+		})
+	}
+
 	todo := models.Todo{
 		Todos:     body.Todos,
 		Status:    body.Status,
+		UserID:    userID,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
@@ -52,7 +72,7 @@ func (TodosController) CreateTodos(c *fiber.Ctx) error {
 	todo.ID = res.InsertedID.(primitive.ObjectID)
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"message": "Todo Berhasil Dibuat",
+		"message": "Todo Create Succes",
 		"data":    todo,
 	})
 }
@@ -63,7 +83,7 @@ func (TodosController) EditTodos(c *fiber.Ctx) error {
 
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Invalid ID format",
+			"message": "Invalid ID ",
 		})
 	}
 
@@ -183,6 +203,51 @@ func (TodosController) GetAllTodo(c *fiber.Ctx) error {
 	}
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Get Todo Successfully ",
+		"data":    todos,
+	})
+}
+
+func (TodosController) GetTodoByUser(c *fiber.Ctx) error {
+	collection := config.DB.Collection("todos")
+
+	userId := c.Params("userId")
+	if userId == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Format Id Invalid",
+		})
+	}
+	objectID, err := primitive.ObjectIDFromHex(userId)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Invalid User ID",
+		})
+	}
+	var todos []models.Todo
+
+	filter := bson.M{"userId": objectID}
+	res, err := collection.Find(c.Context(), filter)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Server Internal Error",
+		})
+	}
+	defer res.Close(c.Context())
+	for res.Next(c.Context()) {
+		var todo models.Todo
+		if err := res.Decode(&todo); err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"message": "Error Decoding Todo",
+			})
+		}
+		todos = append(todos, todo)
+	}
+	if err := res.Err(); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Cursor Error",
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Get Todo by User Successfully",
 		"data":    todos,
 	})
 }

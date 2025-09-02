@@ -20,10 +20,10 @@ type AuthController struct{}
 
 func (AuthController) Register(c *fiber.Ctx) error {
 	var body struct {
-		Fullname string `json:"fullname"`
-		Email    string `json:"email"`
-		Password string `json:"password"`
-		Role     string `json:"role"`
+		Fullname string       `json:"fullname"`
+		Email    string       `json:"email"`
+		Password string       `json:"password"`
+		Role     *models.Role `json:"role"`
 	}
 	if err := c.BodyParser(&body); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -42,6 +42,19 @@ func (AuthController) Register(c *fiber.Ctx) error {
 		})
 	}
 
+	var role models.Role
+
+	if body.Role == nil {
+		role = models.RoleUser
+	} else {
+		role = *body.Role
+		if !role.IsValid() {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": "Invalid role, must be one of: admin, user",
+			})
+		}
+	}
+
 	hash, _ := bcrypt.GenerateFromPassword([]byte(body.Password), 12)
 
 	user := models.User{
@@ -49,7 +62,7 @@ func (AuthController) Register(c *fiber.Ctx) error {
 		Fullname:  body.Fullname,
 		Email:     body.Email,
 		Password:  string(hash),
-		Role:      body.Role,
+		Role:      role,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
@@ -112,13 +125,16 @@ func (AuthController) Login(c *fiber.Ctx) error {
 	tokenString, _ := token.SignedString([]byte(secret))
 
 	return c.JSON(fiber.Map{
+
 		"message": "Login berhasil",
-		"token":   tokenString,
-		"user": fiber.Map{
-			"id":       user.ID.Hex(),
-			"fullname": user.Fullname,
-			"email":    user.Email,
-			"role":     user.Role,
+		"data": fiber.Map{
+			"token": tokenString,
+			"user": fiber.Map{
+				"id":       user.ID.Hex(),
+				"fullname": user.Fullname,
+				"email":    user.Email,
+				"role":     user.Role,
+			},
 		},
 	})
 }
@@ -148,5 +164,42 @@ func (AuthController) Logout(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{
 		"message": "Logout berhasil, token di-blacklist",
+	})
+}
+
+func (AuthController) GetProfile(c *fiber.Ctx) error {
+	userId, ok := c.Locals("userID").(string)
+	if !ok || userId == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "Unauthorized: no user claims found",
+		})
+	}
+
+	objectID, err := primitive.ObjectIDFromHex(userId)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Invalid user ID",
+		})
+	}
+
+	collection := config.DB.Collection("users")
+	var user models.User
+	err = collection.FindOne(c.Context(), bson.M{"_id": objectID}).Decode(&user)
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "User not found",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Get Profile Success",
+		"data": fiber.Map{
+			"id":        user.ID.Hex(),
+			"fullname":  user.Fullname,
+			"email":     user.Email,
+			"role":      user.Role,
+			"createdAt": user.CreatedAt,
+			"updatedAt": user.UpdatedAt,
+		},
 	})
 }

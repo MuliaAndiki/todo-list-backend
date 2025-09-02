@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"todolist/config"
-	"todolist/models"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
@@ -47,22 +46,27 @@ func VerifyToken(c *fiber.Ctx) error {
 		})
 	}
 
-	c.Locals("user", claims)
+	if id, ok := claims["id"].(string); ok {
+		c.Locals("userID", id)
+	}
+	if role, ok := claims["role"].(string); ok {
+		c.Locals("role", role)
+	}
 
 	return c.Next()
 }
 
 func RequireRole(roles []string) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		user, ok := c.Locals("user").(models.User)
+		role, ok := c.Locals("role").(string)
 		if !ok {
 			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-				"message": "Akses ditolak. User tidak ditemukan.",
+				"message": "Akses ditolak. Role tidak ditemukan.",
 			})
 		}
 
-		for _, role := range roles {
-			if user.Role == role {
+		for _, r := range roles {
+			if role == r {
 				return c.Next()
 			}
 		}
